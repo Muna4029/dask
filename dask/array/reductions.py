@@ -1586,11 +1586,14 @@ def quantile(
     else:
         kwargs = {}
 
+    if NUMPY_GE_200:
+        quantile_kwargs = {"method": method}
+    else:
+        quantile_kwargs = {"method": method, "interpolation": interpolation}
     result = a.map_blocks(
         np.quantile,
         q=q,
-        method=method,
-        interpolation=interpolation,
+        **quantile_kwargs,
         axis=axis,
         keepdims=keepdims,
         drop_axis=axis if not keepdims else None,
@@ -1638,12 +1641,15 @@ def _custom_quantile(
     ):
         # bail to nanquantile. Assumptions are pretty strict for now but we
         # do cover the xarray.quantile case.
+        if NUMPY_GE_200:
+            nanquantile_kwargs = {"method": method}
+        else:
+            nanquantile_kwargs = {"method": method, "interpolation": interpolation}
         return np.nanquantile(
             a,
             q,
             axis=axis,
-            method=method,
-            interpolation=interpolation,
+            **nanquantile_kwargs,
             keepdims=keepdims,
             **kwargs,
         )
@@ -1744,12 +1750,19 @@ def nanquantile(
         kwargs = {"quantiles": q}
     else:
         func = _custom_quantile
-        kwargs = {
-            "q": q,
-            "method": method,
-            "interpolation": interpolation,
-            "keepdims": keepdims,
-        }
+        if NUMPY_GE_200:
+            kwargs = {
+                "q": q,
+                "method": method,
+                "keepdims": keepdims,
+            }
+        else:
+            kwargs = {
+                "q": q,
+                "method": method,
+                "interpolation": interpolation,
+                "keepdims": keepdims,
+            }
         if NUMPY_GE_200:
             kwargs.update({"weights": weights})
 

@@ -4323,7 +4323,7 @@ def test_to_timedelta():
     ds = dd.from_pandas(s, npartitions=2)
     assert_eq(pd.to_timedelta(s, errors="coerce"), dd.to_timedelta(ds, errors="coerce"))
 
-    s = pd.Series(["1", 2, "1 day 2 hours"])
+    s = pd.Series(["1 day", "2 hours", "1 day 2 hours"])
     ds = dd.from_pandas(s, npartitions=2)
     assert_eq(pd.to_timedelta(s), dd.to_timedelta(ds))
 
