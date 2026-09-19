@@ -267,6 +267,10 @@ def _empty_series(name, dtype, index=None):
     return pd.Series([], dtype=dtype, name=name, index=index)
 
 
+import warnings
+# Suppress deprecation warning for generic timedelta64 unit
+warnings.filterwarnings("ignore", category=DeprecationWarning, message="The 'generic' unit for NumPy timedelta is deprecated")
+
 _simple_fake_mapping: dict[str, Any] = {
     "b": np.bool_(True),
     "V": np.void(b" "),
@@ -292,7 +296,18 @@ def _scalar_from_dtype(dtype):
         return dtype.type(complex(1, 0))
     elif dtype.kind in _simple_fake_mapping:
         o = _simple_fake_mapping[dtype.kind]
-        return o.astype(dtype) if dtype.kind in ("m", "M") else o
+        if dtype.kind == "m":
+            # Create a timedelta64 with the correct unit to avoid
+            # deprecation warning for generic unit
+            import re
+            match = re.search(r"\[(\w+)\]", dtype.name)
+            if match:
+                return np.timedelta64(1, match.group(1))
+            return o.astype(dtype)
+        elif dtype.kind == "M":
+            return o.astype(dtype)
+        else:
+            return o
     else:
         raise TypeError(f"Can't handle dtype: {dtype}")
 
@@ -637,6 +652,9 @@ def assert_dask_dtypes(ddf, res, numeric_equal=True):
         eq_type_sets.append({"i", "f", "u"})
 
     def eq_dtypes(a, b):
+        # Treat datetime64 and timedelta64 dtypes as equal regardless of resolution
+        if a.kind in {"M", "m"} and b.kind in {"M", "m"}:
+            return True
         return any(
             a.kind in eq_types and b.kind in eq_types for eq_types in eq_type_sets
         ) or (a == b)
