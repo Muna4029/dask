@@ -29,6 +29,28 @@ def _reduce_method_descriptor(m):
 # type(set.union) is used as a proxy to <class 'method_descriptor'>
 copyreg.pickle(type(set.union), _reduce_method_descriptor)
 
+
+def _reduce_cimultidictproxy(obj):
+    # aiohttp returns response headers as CIMultiDictProxy objects, which
+    # cannot be serialized by default. Convert them to a plain dict so that
+    # exceptions carrying these headers (e.g. aiohttp's ClientResponseError)
+    # can be sent back from worker processes.
+    return _unpickle_cimultidictproxy, (dict(obj.items()),)
+
+
+def _unpickle_cimultidictproxy(values):
+    from multidict import CIMultiDict, CIMultiDictProxy
+
+    return CIMultiDictProxy(CIMultiDict(values))
+
+
+try:
+    from multidict import CIMultiDictProxy
+
+    copyreg.pickle(CIMultiDictProxy, _reduce_cimultidictproxy)
+except ImportError:
+    pass
+
 _dumps = partial(cloudpickle.dumps, protocol=pickle.HIGHEST_PROTOCOL)
 _loads = cloudpickle.loads
 
