@@ -22,7 +22,7 @@ if [[ ${UPSTREAM_DEV} ]]; then
         git+https://github.com/fsspec/s3fs \
         git+https://github.com/dask/partd \
         git+https://github.com/dask/zict \
-        git+https://github.com/dask/distributed \
+        distributed==2025.9.1 \
         git+https://github.com/zarr-developers/zarr-python
     # NOTE: Dev version of `fsspec` needs to be installed after the dev version of
     # `s3fs` to avoid dependency conflicts
