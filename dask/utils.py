@@ -2165,7 +2165,7 @@ def show_versions() -> None:
 
     try:
         from distributed import __version__ as distributed_version
-    except ImportError:
+    except (ImportError, AttributeError):
         distributed_version = None
 
     from dask import __version__ as dask_version
@@ -2238,7 +2238,7 @@ def get_default_shuffle_method() -> str:
         from distributed.shuffle import check_minimal_arrow_version
 
         check_minimal_arrow_version()
-    except ModuleNotFoundError:
+    except (ImportError, AttributeError):
         return "tasks"
     return "p2p"
 
