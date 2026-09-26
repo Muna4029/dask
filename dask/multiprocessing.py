@@ -117,10 +117,15 @@ def pack_exception(e, dumps):
     tb = _pack_traceback(exc_traceback)
     try:
         result = dumps((e, tb))
-    except Exception as e:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        tb = _pack_traceback(exc_traceback)
-        result = dumps((e, tb))
+    except Exception as first_error:
+        # If pickling fails (e.g., due to unpicklable objects like multidict),
+        # try to create a simpler representation of the exception
+        try:
+            simple_error = (str(exc_type), str(exc_value), tb)
+            result = dumps(simple_error)
+        except Exception:
+            # If that also fails, just return the traceback as a string
+            result = dumps((str(exc_type), str(exc_value), tb))
     return result
 
 

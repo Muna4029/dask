@@ -52,25 +52,24 @@ df = pd.DataFrame(
 
 ddf = dd.from_pandas(df, npartitions=npartitions)
 
-_engine_fixture = pytest.fixture(
-    params=[
-        pytest.param("pyarrow", marks=[PYARROW_MARK]),
-    ]
-)
+_engine_fixture = pytest.fixture(params=["pyarrow"])
 
 
 @_engine_fixture
 def engine(request):
+    pytest.importorskip("pyarrow")
     return request.param
 
 
 @_engine_fixture
 def write_engine(request):
+    pytest.importorskip("pyarrow")
     return request.param
 
 
 @_engine_fixture
 def read_engine(request):
+    pytest.importorskip("pyarrow")
     return request.param
 
 
