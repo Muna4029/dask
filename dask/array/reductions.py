@@ -1590,7 +1590,6 @@ def quantile(
         np.quantile,
         q=q,
         method=method,
-        interpolation=interpolation,
         axis=axis,
         keepdims=keepdims,
         drop_axis=axis if not keepdims else None,
@@ -1629,8 +1628,10 @@ def _custom_quantile(
     keepdims=False,
     **kwargs,
 ):
+    if interpolation is not None:
+        method = interpolation
     if (
-        not {method, interpolation}.issubset({"linear", None})
+        not {method}.issubset({"linear", None})
         or len(axis) != 1
         or axis[0] != len(a.shape) - 1
         or len(a.shape) == 1
@@ -1643,7 +1644,6 @@ def _custom_quantile(
             q,
             axis=axis,
             method=method,
-            interpolation=interpolation,
             keepdims=keepdims,
             **kwargs,
         )
@@ -1671,7 +1671,7 @@ def _custom_quantile(
 
     quantiles = []
     reshape_shapes = (1,) + tuple(sorted_arr.shape[:-1]) + ((1,) if keepdims else ())
-    for single_q in list(q):
+    for single_q in q:
         i = (
             np.ones(nr_quantiles) * (a.shape[-1] - 1)
             - np.isnan(sorted_arr).sum(axis=-1).reshape(-1)
@@ -1747,7 +1747,6 @@ def nanquantile(
         kwargs = {
             "q": q,
             "method": method,
-            "interpolation": interpolation,
             "keepdims": keepdims,
         }
         if NUMPY_GE_200:
