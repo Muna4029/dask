@@ -219,7 +219,8 @@ def _deprecated_kwarg(
             "mapping from old to new argument values must be dict or callable!"
         )
 
-    comment_ = f"\n{comment}" or ""
+    comment = comment or ""
+    comment_ = f"\n{comment}"
 
     def _deprecated_kwarg(func: F) -> F:
         @wraps(func)
@@ -2238,7 +2239,7 @@ def get_default_shuffle_method() -> str:
         from distributed.shuffle import check_minimal_arrow_version
 
         check_minimal_arrow_version()
-    except ModuleNotFoundError:
+    except ImportError:
         return "tasks"
     return "p2p"
 
