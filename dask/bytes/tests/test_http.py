@@ -132,35 +132,30 @@ def test_ops_blocksize(dir_server):
 
 def test_errors(dir_server):
     f = open_files("http://localhost:8999/doesnotexist")[0]
-    with pytest.raises(errs):
-        with f as f:
-            f.read()
+    with pytest.raises(errs), f as f:
+        f.read()
     f = open_files("http://nohost/")[0]
 
     expected = FileNotFoundError
 
-    with pytest.raises(expected):
-        with f as f:
-            f.read()
+    with pytest.raises(expected), f as f:
+        f.read()
     root = "http://localhost:8999/"
     fn = files[0]
     f = open_files(root + fn, mode="wb")[0]
-    with pytest.raises(NotImplementedError):
-        with f:
-            pass
+    with pytest.raises(NotImplementedError), f:
+        pass
     f = open_files(root + fn)[0]
-    with f as f:
-        with pytest.raises(ValueError):
-            f.seek(-1)
+    with f as f, pytest.raises(ValueError):
+        f.seek(-1)
 
 
 def test_files(dir_server):
     root = "http://localhost:8999/"
     fs = open_files([root + f for f in files])
     for f, f2 in zip(fs, files):
-        with f as f:
-            with open(os.path.join(dir_server, f2), "rb") as expected:
-                assert f.read() == expected.read()
+        with f as f, open(os.path.join(dir_server, f2), "rb") as expected:
+            assert f.read() == expected.read()
 
 
 def test_open_glob(dir_server):
@@ -200,7 +195,7 @@ def test_bag():
     urls = [
         "https://raw.githubusercontent.com/weierophinney/pastebin/"
         "master/public/js-src/dojox/data/tests/stores/patterns.csv",
-        "https://en.wikipedia.org",
+        "https://httpbin.org",
     ]
     b = db.read_text(urls)
     assert b.npartitions == 2
