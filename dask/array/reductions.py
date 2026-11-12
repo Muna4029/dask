@@ -25,7 +25,7 @@ from dask.array.core import (
 )
 from dask.array.creation import arange, diagonal
 from dask.array.dispatch import divide_lookup, nannumel_lookup, numel_lookup
-from dask.array.numpy_compat import NUMPY_GE_200
+from dask.array.numpy_compat import NUMPY_GE_122, NUMPY_GE_200
 from dask.array.utils import (
     array_safe,
     asarray_safe,
@@ -1586,11 +1586,15 @@ def quantile(
     else:
         kwargs = {}
 
+    if NUMPY_GE_122:
+        _quantile_kwargs = {"method": interpolation if interpolation is not None else method}
+    else:
+        _quantile_kwargs = {"interpolation": interpolation if interpolation is not None else method}
+
     result = a.map_blocks(
         np.quantile,
         q=q,
-        method=method,
-        interpolation=interpolation,
+        **_quantile_kwargs,
         axis=axis,
         keepdims=keepdims,
         drop_axis=axis if not keepdims else None,
@@ -1638,12 +1642,15 @@ def _custom_quantile(
     ):
         # bail to nanquantile. Assumptions are pretty strict for now but we
         # do cover the xarray.quantile case.
+        if NUMPY_GE_122:
+            _nanquantile_kwargs = {"method": interpolation if interpolation is not None else method}
+        else:
+            _nanquantile_kwargs = {"interpolation": interpolation if interpolation is not None else method}
         return np.nanquantile(
             a,
             q,
             axis=axis,
-            method=method,
-            interpolation=interpolation,
+            **_nanquantile_kwargs,
             keepdims=keepdims,
             **kwargs,
         )

@@ -11,6 +11,7 @@ from packaging.version import Version
 from dask.utils import derived_from
 
 _np_version = Version(np.__version__)
+NUMPY_GE_122 = _np_version.release >= (1, 22)
 NUMPY_GE_125 = _np_version.release >= (1, 25)
 NUMPY_GE_200 = _np_version.release >= (2, 0)
 NUMPY_GE_210 = _np_version.release >= (2, 1)
