@@ -1713,8 +1713,9 @@ def test_dataframe_quantile(method, expected, numeric_only):
 
         assert_eq(result, expected)
 
-        with pytest.raises(ValueError), assert_numeric_only_default_warning(
-            numeric_only, "quantile"
+        with (
+            pytest.raises(ValueError),
+            assert_numeric_only_default_warning(numeric_only, "quantile"),
         ):
             ddf.quantile([0.25, 0.75], axis=1, method=method, **numeric_only_kwarg)
 
@@ -3294,7 +3295,7 @@ def test_to_frame():
     assert_eq(s.to_frame("bar"), a.to_frame("bar"))
 
 
-@pytest.mark.parametrize("as_frame", [False, False])
+@pytest.mark.parametrize("as_frame", [False, True])
 def test_to_dask_array_raises(as_frame):
     s = pd.Series([1, 2, 3, 4, 5, 6], name="foo")
     a = dd.from_pandas(s, npartitions=2)
@@ -3340,7 +3341,7 @@ def test_to_dask_array_unknown(as_frame):
         (True, False, np.array([], dtype="f4")),
     ],
 )
-def test_to_dask_array(meta, as_frame, lengths):
+def test_to_dask_array(lengths, as_frame, meta):
     s = pd.Series([1, 2, 3, 4, 5], name="foo", dtype="i4")
     a = dd.from_pandas(s, chunksize=2)
 
@@ -3829,7 +3830,11 @@ def test_autocorr():
     assert_eq(dx.autocorr(0), x.autocorr(0))
     assert_eq(dx.autocorr(-2), x.autocorr(-2))
     assert_eq(dx.autocorr(2, split_every=3), x.autocorr(2))
-    pytest.raises(TypeError, lambda: dx.autocorr(1.5))
+    # Use a typed cast to Any to avoid mypy complaining about the float literal
+    from typing import Any, cast
+
+    bad_arg = cast(Any, 1.5)
+    pytest.raises(TypeError, lambda: dx.autocorr(bad_arg))
 
 
 def test_apply_infer_columns():
@@ -3927,9 +3932,10 @@ def test_nlargest_nsmallest_raises():
     df = pd.DataFrame({"a": [1, 2, 3]})
     ddf = dd.from_pandas(df, npartitions=2)
     with pytest.raises(TypeError, match="required positional"):
-        ddf.nlargest()
+        # Call via getattr to avoid static mypy checking of missing positional args
+        getattr(ddf, "nlargest")()
     with pytest.raises(TypeError, match="required positional"):
-        ddf.nsmallest()
+        getattr(ddf, "nsmallest")()
 
 
 def test_reset_index():

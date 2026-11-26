@@ -148,7 +148,7 @@ def _deprecated_kwarg(
     new_arg_name: str | None = None,
     mapping: Mapping[Any, Any] | Callable[[Any], Any] | None = None,
     stacklevel: int = 2,
-    comment: str | None = None
+    comment: str | None = None,
 ) -> Callable[[F], F]:
     """
     Decorator to deprecate a keyword argument of a function.
@@ -219,11 +219,12 @@ def _deprecated_kwarg(
             "mapping from old to new argument values must be dict or callable!"
         )
 
-    comment = f"\n{comment}" or ""
+    # Prepend a newline to the comment only if a comment was provided.
+    comment = ("\n" + comment) if comment is not None else ""
 
     def _deprecated_kwarg(func: F) -> F:
         @wraps(func)
-        def wrapper(*args, **kwargs) -> Callable[..., Any]:
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             old_arg_value = kwargs.pop(old_arg_name, no_default)
 
             if old_arg_value is not no_default:
@@ -255,7 +256,8 @@ def _deprecated_kwarg(
                     )
 
                 warnings.warn(msg + comment, FutureWarning, stacklevel=stacklevel)
-                if kwargs.get(new_arg_name) is not None:
+                # Detect presence of the new argument even if its value is None
+                if new_arg_name in kwargs:
                     msg = (
                         f"Can only specify {repr(old_arg_name)} "
                         f"or {repr(new_arg_name)}, not both."
@@ -1209,7 +1211,7 @@ def put_lines(buf, lines):
     buf.write("\n".join(lines))
 
 
-_method_cache: dict[str, methodcaller] = {}
+_method_cache: dict[str, "methodcaller"] = {}
 
 
 class methodcaller:
@@ -1320,7 +1322,7 @@ class SerializableLock:
     token: Hashable
     lock: Lock
 
-    def __init__(self, token: Hashable | None = None):
+    def __init__(self, token: Optional[Hashable] = None):
         self.token = token or str(uuid.uuid4())
         if self.token in SerializableLock._locks:
             self.lock = SerializableLock._locks[self.token]
@@ -1559,7 +1561,7 @@ def is_cupy_type(x) -> bool:
     return "cupy" in str(type(x))
 
 
-def natural_sort_key(s: str) -> list[str | int]:
+def natural_sort_key(s: str) -> list[Union[str, int]]:
     """
     Sorting `key` function for performing a natural sort on a collection of
     strings
@@ -1588,7 +1590,7 @@ def natural_sort_key(s: str) -> list[str | int]:
     return [int(part) if part.isdigit() else part for part in re.split(r"(\d+)", s)]
 
 
-def parse_bytes(s: float | str) -> int:
+def parse_bytes(s: Union[float, str]) -> int:
     """Parse byte string to numbers
 
     >>> from dask.utils import parse_bytes
@@ -1832,15 +1834,15 @@ timedelta_sizes.update({k.upper(): v for k, v in timedelta_sizes.items()})
 
 
 @overload
-def parse_timedelta(s: None, default: str | Literal[False] = "seconds") -> None:
-    ...
+def parse_timedelta(
+    s: None, default: Union[str, Literal[False]] = "seconds"
+) -> None: ...
 
 
 @overload
 def parse_timedelta(
-    s: str | float | timedelta, default: str | Literal[False] = "seconds"
-) -> float:
-    ...
+    s: Union[str, float, timedelta], default: Union[str, Literal[False]] = "seconds"
+) -> float: ...
 
 
 def parse_timedelta(s, default="seconds"):
@@ -2010,7 +2012,7 @@ def key_split(s):
         return "Other"
 
 
-def stringify(obj, exclusive: Iterable | None = None):
+def stringify(obj, exclusive: Optional[Iterable] = None):
     """Convert an object to a string
 
     If ``exclusive`` is specified, search through `obj` and convert
@@ -2196,7 +2198,7 @@ def show_versions() -> None:
         "zarr",
     ]
 
-    result: dict[str, str | None] = {
+    result: dict[str, Optional[str]] = {
         # note: only major, minor, micro are extracted
         "Python": ".".join([str(i) for i in version_info[:3]]),
         "Platform": uname().system,
